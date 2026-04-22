@@ -1,0 +1,17 @@
+digraph G {
+"shoulder_link" -> "Elbow_link"[label=" Broadcaster: default_authority\nAverage rate: 16.865\nBuffer length: 5.04\nMost recent transform: 1776820871.091057\nOldest transform: 1776820866.051079\n"];
+"rotating_base" -> "shoulder_link"[label=" Broadcaster: default_authority\nAverage rate: 16.865\nBuffer length: 5.04\nMost recent transform: 1776820871.091057\nOldest transform: 1776820866.051079\n"];
+"wrist_link" -> "gripper"[label=" Broadcaster: default_authority\nAverage rate: 16.865\nBuffer length: 5.04\nMost recent transform: 1776820871.091057\nOldest transform: 1776820866.051079\n"];
+"Elbow_link" -> "wrist_link"[label=" Broadcaster: default_authority\nAverage rate: 16.865\nBuffer length: 5.04\nMost recent transform: 1776820871.091057\nOldest transform: 1776820866.051079\n"];
+"base_link" -> "rotating_base"[label=" Broadcaster: default_authority\nAverage rate: 16.865\nBuffer length: 5.04\nMost recent transform: 1776820871.091057\nOldest transform: 1776820866.051079\n"];
+"world" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"gripper" -> "camera_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"camera_link" -> "camera_depth_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"camera_depth_frame" -> "camera_depth_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"camera_link" -> "camera_color_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"camera_color_frame" -> "camera_color_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1776820871.1101384"[ shape=plaintext ] ;
+}->"world";
+}

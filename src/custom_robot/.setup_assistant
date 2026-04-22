@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: pca9685_arm_robot
+    relative_path: urdf/arm_robot_ros2_control_block.urdf
+  srdf:
+    relative_path: config/arm_robot_pkg.srdf
+  package_settings:
+    author_name: Tashen
+    author_email: tashenlrana@gmail.com
+    generated_timestamp: 1776196463
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity

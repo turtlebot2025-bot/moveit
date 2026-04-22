@@ -1,0 +1,458 @@
+<?xml version="1.0"?>
+<!-- arm_robot_pkg.urdf
+     ──────────────────
+     This is your original URDF with the ros2_control block updated to:
+       1. Use the pca9685_arm_robot plugin
+       2. Add per-joint calibration params (channel, pulse widths, limits)
+
+     Replace the existing <ros2_control> block in your URDF with this one.
+     All kinematic links/joints above are unchanged.
+-->
+<robot name="arm_robot_pkg">
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       ALL YOUR EXISTING LINKS AND JOINTS GO HERE (unchanged)
+       — base_link, rotating_base, shoulder_link, Elbow_link,
+         wrist_link, gripper — exactly as exported by SolidWorks.
+       ════════════════════════════════════════════════════════════════════ -->
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       ros2_control block — REPLACE the existing one with this
+       ════════════════════════════════════════════════════════════════════ -->
+
+  <link name="world"/>
+    <joint name ="world_fixed_base" type="fixed">
+      <parent link ="world"/>
+      <child link="base_link"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    </joint>
+    
+
+
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-1.1366E-08 0.025967 -0.00013083"
+        rpy="0 0 0" />
+      <mass
+        value="0.14496" />
+      <inertia
+        ixx="0.00014447"
+        ixy="-5.6249E-12"
+        ixz="2.6788E-11"
+        iyy="0.00029241"
+        iyz="-4.0046E-06"
+        izz="0.00019087" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.7451 0.56078 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="rotating_base">
+    <inertial>
+      <origin
+        xyz="0.0015209 0.019183 0.0072511"
+        rpy="0 0 0" />
+      <mass
+        value="0.072452" />
+      <inertia
+        ixx="4.957E-05"
+        ixy="-6.6445E-06"
+        ixz="-3.5E-07"
+        iyy="5.8905E-05"
+        iyz="-6.2507E-06"
+        izz="6.6555E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/rotating_base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.64706 0.61961 0.58824 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/rotating_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rotating_base_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0.0534"
+      rpy="1.5708 0 1.5083" />
+    <parent
+      link="base_link" />
+    <child
+      link="rotating_base" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.046"
+      upper="1.046"
+      effort="7"
+      velocity="0" />
+  </joint>
+  <link
+    name="shoulder_link">
+    <inertial>
+      <origin
+        xyz="-3.278E-08 -0.0068604 0.06"
+        rpy="0 0 0" />
+      <mass
+        value="0.064873" />
+      <inertia
+        ixx="0.00010616"
+        ixy="-4.3906E-11"
+        ixz="1.9531E-11"
+        iyy="0.00011116"
+        iyz="1.5994E-10"
+        izz="9.4574E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/shoulder_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.9098 0.44314 0.031373 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/shoulder_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="shoulder_link_joint"
+    type="revolute">
+    <origin
+      xyz="0.01391 0.04028 0"
+      rpy="1.5708 0 2.9049" />
+    <parent
+      link="rotating_base" />
+    <child
+      link="shoulder_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.046"
+      upper="1.046"
+      effort="6"
+      velocity="0" />
+  </joint>
+  <link
+    name="Elbow_link">
+    <inertial>
+      <origin
+        xyz="0.041368 -3.0653E-05 0.012522"
+        rpy="0 0 0" />
+      <mass
+        value="0.048013" />
+      <inertia
+        ixx="9.0564E-06"
+        ixy="6.9501E-08"
+        ixz="9.4144E-08"
+        iyy="5.2721E-05"
+        iyz="1.6651E-10"
+        izz="5.619E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/Elbow_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.9098 0.44314 0.031373 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/Elbow_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Elbow_link_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0.12"
+      rpy="-1.5708 -0.72865 0" />
+    <parent
+      link="shoulder_link" />
+    <child
+      link="Elbow_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.046"
+      upper="1.046"
+      effort="6"
+      velocity="0" />
+  </joint>
+  <link
+    name="wrist_link">
+    <inertial>
+      <origin
+        xyz="0.0050461 0.03312 -0.005357"
+        rpy="0 0 0" />
+      <mass
+        value="0.016368" />
+      <inertia
+        ixx="3.878E-06"
+        ixy="1.1629E-08"
+        ixz="-4.0541E-09"
+        iyy="2.567E-06"
+        iyz="5.8334E-07"
+        izz="4.971E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/wrist_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.9098 0.44314 0.031373 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/wrist_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wrist_link_joint"
+    type="revolute">
+    <origin
+      xyz="0.076247 0.0053 0.0125"
+      rpy="0 -0.0023933 -1.5708" />
+    <parent
+      link="Elbow_link" />
+    <child
+      link="wrist_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="5"
+      velocity="0" />
+  </joint>
+  <link
+    name="gripper">
+    <inertial>
+      <origin
+        xyz="-0.0159038540803953 0.00424072813829934 0.021244775964588"
+        rpy="0 0 0" />
+      <mass
+        value="0.0404906779655548" />
+      <inertia
+        ixx="1.4848483571203E-05"
+        ixy="-8.10262188577281E-08"
+        ixz="-3.36945997006045E-07"
+        iyy="1.44737929752106E-05"
+        iyz="-4.58219387030767E-07"
+        izz="2.24889997572499E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/gripper.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.909803921568627 0.443137254901961 0.0313725490196078 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://pca9685_arm_robot/meshes/gripper.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="gripper_joint"
+    type="revolute">
+    <origin
+      xyz="0.005 0.043353 0"
+      rpy="-1.9228 -1.5708 1.1777" />
+    <parent
+      link="wrist_link" />
+    <child
+      link="gripper" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="5"
+      velocity="0" />
+  </joint>
+
+
+  <ros2_control name="arm_robot_pkg" type="system">
+
+    <hardware>
+      <plugin>mock_components/GenericSystem</plugin>
+      <!-- I²C bus 7 = Pin 3/5 on Jetson AGX Orin 40-pin header -->
+      <param name="i2c_bus">7</param>
+      <!-- PCA9685 default address (A0-A5 all unsoldered) -->
+      <param name="i2c_address">0x40</param>
+      <!-- Standard hobby servo PWM frequency -->
+      <param name="pwm_frequency">50</param>
+    </hardware>
+
+    <!-- ── base_joint  (rotating_base_joint  ±1.046 rad) ──────────────
+         Maps to PCA9685 channel 2.
+         URDF: 0 rad = robot home = servo centre (1500 µs)
+         Run calibrate_servos.py to find your servo's actual min/max.        -->
+    <joint name="rotating_base_joint">
+      <param name="channel">2</param>
+      <param name="min_pulse_us">280</param>    <!-- servo at -1.046 rad -->
+      <param name="max_pulse_us">2540</param>   <!-- servo at +1.046 rad -->
+      <param name="urdf_limit_rad">1.046</param><!-- must match URDF limit -->
+      <param name="home_angle_deg">0</param>    <!-- 0 deg = 0 rad = neutral -->
+      <command_interface name="position">
+        <param name="min">-1.046</param>
+        <param name="max"> 1.046</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
+
+    <!-- ── shoulder_joint  (shoulder_link_joint  ±1.046 rad) ──────────
+         Maps to PCA9685 channel 0.                                          -->
+    <joint name="shoulder_link_joint">
+      <param name="channel">0</param>
+      <param name="min_pulse_us">1358</param>
+      <param name="max_pulse_us">2058</param>
+      <param name="urdf_limit_rad">1.046</param>
+      <param name="home_angle_deg">0</param>
+      <command_interface name="position">
+        <param name="min">-1.046</param>
+        <param name="max"> 1.046</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
+
+    <!-- ── elbow_joint  (Elbow_link_joint  ±1.046 rad) ────────────────
+         Maps to PCA9685 channel 1.                                          -->
+    <joint name="Elbow_link_joint">
+      <param name="channel">1</param>
+      <param name="min_pulse_us">370</param>
+      <param name="max_pulse_us">2630</param>
+      <param name="urdf_limit_rad">1.046</param>
+      <param name="home_angle_deg">0</param>
+      <command_interface name="position">
+        <param name="min">-1.046</param>
+        <param name="max"> 1.046</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
+
+    <!-- ── wrist_joint  (wrist_link_joint  ±1.57 rad) ─────────────────
+         Maps to PCA9685 channel 3.                                          -->
+    <joint name="wrist_link_joint">
+      <param name="channel">3</param>
+      <param name="min_pulse_us">530</param>
+      <param name="max_pulse_us">2310</param>
+      <param name="urdf_limit_rad">1.570</param>
+      <param name="home_angle_deg">0</param>
+      <command_interface name="position">
+        <param name="min">-1.57</param>
+        <param name="max"> 1.57</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
+
+    <!-- ── gripper_joint  (±1.57 rad) ─────────────────────────────────
+         Maps to PCA9685 channel 4.
+         home_angle_deg = 0 = gripper fully open at neutral.
+         Change to a positive value if your gripper rests closed.            -->
+    <joint name="gripper_joint">
+      <param name="channel">4</param>
+      <param name="min_pulse_us">620</param>
+      <param name="max_pulse_us">2760</param>
+      <param name="urdf_limit_rad">1.570</param>
+      <param name="home_angle_deg">0</param>
+      <command_interface name="position">
+        <param name="min">-1.57</param>
+        <param name="max"> 1.57</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
+
+  </ros2_control>
+
+</robot>

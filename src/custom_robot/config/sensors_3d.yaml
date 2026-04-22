@@ -1,0 +1,27 @@
+# MoveIt Sensor Configuration - Intel RealSense D435
+# Point Cloud Octomap Updater
+# Save to: <robot_moveit_config>/config/sensors_kinect_pointcloud.yaml
+
+sensors:
+  - sensor_plugin: occupancy_map_monitor/PointCloudOctomapUpdater
+
+    # RealSense D435 depth-registered point cloud topic
+    point_cloud_topic: /camera/depth/color/points
+
+    # D435 effective range: 0.1m – 10m (practical max ~5–6m for reliable data)
+    max_range: 5.0
+
+    # Subsampling factor to reduce computational load (1 = no subsampling)
+    point_subsample: 1
+
+    # Padding around detected obstacles (metres) to add a safety margin
+    padding_offset: 0.1
+
+    # Scale factor applied on top of padding_offset for variable-size padding
+    padding_scale: 1.0
+
+    # Maximum update rate (Hz) — D435 outputs up to 90 fps, but 1 Hz is safe for planning
+    max_update_rate: 1.0
+
+    # Topic on which the self-filtered cloud will be published (for debugging)
+    filtered_cloud_topic: filtered_cloud

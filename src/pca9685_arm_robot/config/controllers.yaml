@@ -1,0 +1,91 @@
+# config/controllers.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# ros2_control controller manager configuration for arm_robot_pkg.
+#
+# Joint names MUST match the <joint name="..."> tags in the URDF
+# ros2_control block exactly:
+#   base_joint | shoulder_joint | elbow_joint | wrist_joint | gripper_joint
+#
+# Two controllers:
+#   joint_state_broadcaster  — publishes /joint_states for TF and MoveIt 2
+#   arm_controller           — executes JointTrajectory goals from MoveIt 2
+#   gripper_controller       — executes GripperCommand actions from MoveIt 2
+# ─────────────────────────────────────────────────────────────────────────────
+
+controller_manager:
+  ros__parameters:
+    update_rate: 50   # Hz — matches PCA9685 PWM frequency
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+# ── Arm trajectory controller (joints 1–4, excludes gripper) ─────────────────
+arm_controller:
+  ros__parameters:
+    joints:
+      - rotating_base_joint
+      - shoulder_link_joint
+      - Elbow_link_joint
+      - wrist_link_joint
+     
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    # Servos have built-in position control; no velocity/accel commands needed
+    allow_partial_joints_goal: true
+
+    # Goal tolerance — declare success when error < this value
+    constraints:
+      stopped_velocity_tolerance: 0.05   # rad/s
+      goal_time: 0.6                     # seconds grace after trajectory end
+      rotating_base_joint: { goal: 0.05 }     # rad
+      shoulder_link_joint: { goal: 0.05 }
+      Elbow_link_joint:    { goal: 0.05 }
+      wrist_link_joint:    { goal: 0.05 }
+     
+
+    # PID gains — P-only is sufficient for position-controlled servos
+    gains:
+      rotating_base_joint:     { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      shoulder_link_joint: { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      Elbow_link_joint:    { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      wrist_link_joint:    { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+   
+
+    open_loop_control: false
+    allow_integration_in_goal_trajectories: false
+
+
+# ── Gripper controller (gripper_joint only) ───────────────────────────────────
+gripper_controller:
+  ros__parameters:
+    joints:
+      - gripper_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    allow_partial_joints_goal: true
+
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 0.6
+      gripper_joint: { goal: 0.05 }
+
+    gains:
+      gripper_joint: { p: 30.0, i: 0.0, d: 0.5, i_clamp: 1.0 }
+
+    open_loop_control: false

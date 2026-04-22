@@ -1,0 +1,10 @@
+{
+    "cmake.sourceDirectory": "/mnt/34de16c3-ec14-4143-ae79-224ec68068fc/ws_moveit/src/hello_moveit",
+    "python-envs.pythonProjects": [
+        {
+            "path": "install/moveit2_tutorials/share/moveit2_tutorials/launch/launch",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+# Default initial positions for arm_robot_pkg's ros2_control fake system
+
+initial_positions:
+  Elbow_link_joint: 0
+  gripper_joint: 0
+  rotating_base_joint: 0
+  shoulder_link_joint: 0
+  wrist_link_joint: 0
