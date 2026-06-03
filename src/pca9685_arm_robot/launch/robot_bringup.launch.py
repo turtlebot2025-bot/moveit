@@ -70,21 +70,7 @@ def generate_launch_description():
     )
 
 
-    i2c_node = Node(
-    package="pca9685_arm_robot",
-    executable="pca9685_i2c_node",
-    parameters=[{
-        "i2c_bus": 7,
-        "i2c_address": 0x40,
-        "pwm_frequency": 50.0,
-    }],
-    output="screen",
-)
-
-
-
-
-    arm_gripper_spawner = RegisterEventHandler(
+    arm_controller_spawner = RegisterEventHandler(
         event_handler=OnProcessStart(
             target_action=jsb_spawner,
             on_start=[
@@ -96,6 +82,27 @@ def generate_launch_description():
                             executable="spawner",
                             arguments=[
                                 "arm_controller",
+                                "--controller-manager", "/controller_manager",
+                            ],
+                            output="screen",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    gripper_controller_spawner = RegisterEventHandler(
+        event_handler=OnProcessStart(
+            target_action=jsb_spawner,
+            on_start=[
+                TimerAction(
+                    period=2.5,
+                    actions=[
+                        Node(
+                            package="controller_manager",
+                            executable="spawner",
+                            arguments=[
                                 "gripper_controller",
                                 "--controller-manager", "/controller_manager",
                             ],
@@ -113,8 +120,8 @@ def generate_launch_description():
         robot_state_publisher,
         controller_manager,
         jsb_spawner,
-        arm_gripper_spawner,
-        i2c_node
+        arm_controller_spawner,
+        gripper_controller_spawner,
     ])
 
 

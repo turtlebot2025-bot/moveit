@@ -76,6 +76,7 @@ _JOINT_NAMES = {
     1: "Elbow_link_joint",
     3: "wrist_link_joint",
     4: "gripper_joint",
+    5: "right_gear_joint"
 }
 
 
@@ -225,7 +226,7 @@ def calibrate(args):
 
 def print_results(saved):
     """Print the calibration table and copy-paste URDF snippets."""
-    joints_order = [0, 1, 2, 3, 4]
+    joints_order = [0, 1, 2, 3, 4,5]
 
     print("─" * 62)
     print(f"  {'Channel':<8} {'Joint':<18} {'min_pulse_us':>13} {'max_pulse_us':>13}")
@@ -261,7 +262,7 @@ def main():
     )
     parser.add_argument(
         "--channel", "-c",
-        type=int, default=0, choices=[0, 1, 2, 3, 4],
+        type=int, default=0, choices=[0, 1, 2, 3, 4,5],
         help="PCA9685 channel to start on (0=base … 4=gripper). Default: 0"
     )
     parser.add_argument(

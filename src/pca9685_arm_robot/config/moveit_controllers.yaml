@@ -1,31 +1,28 @@
-# config/moveit_controllers.yaml
-# ─────────────────────────────────────────────────────────────────────────────
-# Tells MoveIt 2 which ros2_control controllers to use for each planning group.
+# Minimal MoveIt controller mapping for ros2_control.
 #
-# Place this file in your MoveIt 2 config package (e.g. arm_robot_pkg_moveit)
-# and reference it in the move_group launch file.
-# ─────────────────────────────────────────────────────────────────────────────
+# If you are not using MoveIt, this file is harmless. It is installed because
+# `setup.py` expects it.
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
 
 moveit_simple_controller_manager:
   controller_names:
     - arm_controller
     - gripper_controller
 
-# Arm group — uses arm_controller (base → wrist, 4 joints)
-arm_controller:
-  type: FollowJointTrajectory
-  action_ns: follow_joint_trajectory
-  default: true
-  joints:
-    - rotating_base_joint
-    - shoulder_link_joint
-    - Elbow_link_joint
-    - wrist_link_joint
+  arm_controller:
+    type: FollowJointTrajectory
+    action_ns: follow_joint_trajectory
+    default: true
+    joints:
+      - rotating_base_joint
+      - shoulder_joint
+      - elbow_joint
+      - wrist_joint
 
-# Gripper group — uses gripper_controller (1 joint)
-gripper_controller:
-  type: FollowJointTrajectory
-  action_ns: follow_joint_trajectory
-  default: true
-  joints:
-    - gripper_joint
+  gripper_controller:
+    type: FollowJointTrajectory
+    action_ns: follow_joint_trajectory
+    default: true
+    joints:
+      - gripper_joint
+

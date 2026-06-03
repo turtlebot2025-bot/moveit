@@ -92,14 +92,17 @@ _JOINT_DEFAULTS = {
     # name             ch  min_us  max_us  urdf_limit_rad  home_deg
 "rotating_base_joint":{ "channel": 2, "min_pulse_us": 280, "max_pulse_us": 2540,
                        "urdf_limit_rad": 1.046, "home_angle_deg": 0.0 },
-"shoulder_link_joint":{ "channel": 0, "min_pulse_us": 1358, "max_pulse_us": 2058,
+"shoulder_joint":{ "channel": 0, "min_pulse_us": 1358, "max_pulse_us": 2058,
                        "urdf_limit_rad": 1.046, "home_angle_deg": 0.0 },
-"Elbow_link_joint":   { "channel": 1, "min_pulse_us": 370, "max_pulse_us": 2630,
+"elbow_joint":   { "channel": 1, "min_pulse_us": 370, "max_pulse_us": 2630,
                        "urdf_limit_rad": 1.046, "home_angle_deg": 0.0 },
-"wrist_link_joint":   { "channel": 3, "min_pulse_us": 530, "max_pulse_us": 2310,
+"wrist_joint":   { "channel": 3, "min_pulse_us": 530, "max_pulse_us": 2310,
                        "urdf_limit_rad": 1.570, "home_angle_deg": 0.0 },
 "gripper_joint": { "channel": 4, "min_pulse_us": 620, "max_pulse_us": 2760,
                        "urdf_limit_rad": 1.570, "home_angle_deg": 0.0 },
+
+"right_gear_joint":  {"channel": 5, "min_pulse_us":  620, "max_pulse_us": 2760,
+                       "urdf_limit_rad": 1.570, "home_deg": 0.0},    
 }
 
 
@@ -248,10 +251,17 @@ class PCA9685ArmRobot(SystemInterface):
     # Expected joint order from the URDF ros2_control block
     JOINT_ORDER = [
         "rotating_base_joint",
-        "shoulder_link_joint",
-        "Elbow_link_joint",
-        "wrist_link_joint",
+        "shoulder_joint",
+        "elbow_joint",
+        "wrist_joint",
         "gripper_joint",
+        "right_link_joint",
+        "left_link_joint",
+        "right_gear_joint",
+        "right_finger_joint",
+        "left_gear_joint",
+        "left_finger_joint"
+
     ]
 
     def __init__(self):

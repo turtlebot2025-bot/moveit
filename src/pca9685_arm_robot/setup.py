@@ -32,12 +32,11 @@ setup(
 
         # Controller and MoveIt config
         ("share/" + package_name + "/config",
-             ["config/controllers.yaml",
-              "config/moveit_controllers.yaml"]),
+             glob.glob("config/*.yaml") + glob.glob("config/*.rviz")),
 
         # Launch files
         ("share/" + package_name + "/launch",
-             ["launch/robot_bringup.launch.py"]),
+             glob.glob("launch/*.launch.py") + glob.glob("launch/*.py")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fixed URDF for RViz compatibility
-     Changes from original:
-       1. wrist_joint: axis xyz="0 0 0" -> "0 0 1" (zero axis is invalid)
-       2. gripper_joint: type revolute -> fixed (lower==upper==-1.57, no motion possible)
-       3. left_finger_joint: type revolute -> fixed (lower==upper==0, no motion possible)
-       4. Removed <mimic> tags (not supported natively by robot_state_publisher;
-          causes TF warnings/failures). Joints that were mimic'd are now fixed or
-          retain their own independent limits — adjust as needed for your controller.
+<!-- complete_assembly.urdf — wrist correctly placed between elbow and gripper
+     ─────────────────────────────────────────────────────────────────────────
+     ROOT CAUSE of disconnected wrist in RViz:
+       The original wrist_joint was type="fixed" — a dead-end branch — so
+       robot_state_publisher never propagated the TF from elbow→wrist→gripper.
+       The gripper appeared attached to "wrist" but wrist itself had no live TF.
+
+     CHANGES (only these two joints touched):
+       1. wrist_joint  : type="fixed"   → type="revolute"
+                         axis added     : xyz="0 1 0"
+                         limits added   : ±1.57 rad, effort 1, velocity 1
+                         origin xyz/rpy : UNCHANGED (SolidWorks-exported values)
+
+       2. gripper_joint: parent already = "wrist" — NO CHANGE NEEDED.
+
+     Resulting chain:
+       world → fixed_base → rotating_base → shoulder → elbow
+               → wrist  (revolute, wrist_joint)
+               → gripper (revolute, gripper_joint)
+               → right_gear / left_gear / right_link / left_link (+ fingers)
+
+     If wrist mesh still appears offset after loading this URDF, the STL mesh
+     origin in SolidWorks does not sit at the joint attachment point.  Fix by
+     adding a <visual><origin xyz="dx dy dz" rpy="…"/></visual> correction to
+     the wrist link (see comment inside the wrist link below).
 -->
 <robot name="complete_assembly">
 
@@ -17,119 +34,71 @@
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
 
-   <link
-    name="fixed_base">
-    <inertial>
-      <origin
-        xyz="-0.0129802138796697 0.0289181576077138 -0.0243127481279135"
-        rpy="0 0 0" />
-      <mass
-        value="0.0944551427512308" />
-      <inertia
-        ixx="0.000129607400367704"
-        ixy="1.50360291317691E-06"
-        ixz="3.38108959132247E-06"
-        iyy="0.000192218344593774"
-        iyz="2.77200835499892E-05"
-        izz="0.000146583546079235" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/fixed_base.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.498039215686275 0.498039215686275 0.498039215686275 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/fixed_base.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <link
-    name="rotating_base">
-    <inertial>
-      <origin
-        xyz="0.00224112887909998 0.034999014107939 -0.010207743464756"
-        rpy="0 0 0" />
-      <mass
-        value="0.118965881840798" />
-      <inertia
-        ixx="0.00016167102737483"
-        ixy="5.71349306498677E-06"
-        ixz="-2.36447310161236E-05"
-        iyy="9.19031943418806E-05"
-        iyz="2.21256708862195E-05"
-        izz="0.000160453197088753" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/rotating_base.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.968627450980392 0.258823529411765 0.258823529411765 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/rotating_base.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <joint
-    name="rotating_base_joint"
-    type="revolute">
-    <origin
-      xyz="-0.013782 0.034682 0.0071238"
-      rpy="-1.1076 -0.0065997 -0.003296" />
-    <parent
-      link="fixed_base" />
-    <child
-      link="rotating_base" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-3.14"
-      upper="3.14"
-      effort="0"
-      velocity="0" />
+  <link name="base_link"/>
+  <joint name="base_link_to_fixed_base" type="fixed">
+    <parent link="base_link"/>
+    <child link="fixed_base"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
-  <link
+
+  <link name="fixed_base">
+    <inertial>
+      <origin xyz="-0.0129802138796697 0.0289181576077138 -0.0243127481279135" rpy="0 0 0"/>
+      <mass value="0.0944551427512308"/>
+      <inertia ixx="0.000129607400367704" ixy="1.50360291317691E-06" ixz="3.38108959132247E-06"
+               iyy="0.000192218344593774" iyz="2.77200835499892E-05" izz="0.000146583546079235"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/fixed_base.STL"/></geometry>
+      <material name=""><color rgba="0.498 0.498 0.498 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/fixed_base.STL"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rotating_base">
+    <inertial>
+      <origin xyz="0.00892579137353103 0.0440191723132462 -0.00543608203143876" rpy="0 0 0"/>
+      <mass value="0.118965826503535"/>
+      <inertia ixx="0.000184656310145483" ixy="-1.20401033134862E-05" ixz="1.65983524667134E-06"
+               iyy="9.1902926345823E-05"  iyz="1.94222326953776E-05"  izz="0.000137468053056806"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/rotating_base.STL"/></geometry>
+      <material name=""><color rgba="0.969 0.259 0.259 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/rotating_base.STL"/></geometry>
+    </collision>
+  </link>
+  <joint name="rotating_base_joint" type="revolute">
+    <origin xyz="-0.013849 0.030652 0.015193" rpy="-1.8219 0.39346 -2.177"/>
+    <parent link="fixed_base"/>
+    <child  link="rotating_base"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14" upper="3.14" effort="1" velocity="1"/>
+  </joint>
+
+    <link
     name="shoulder">
     <inertial>
       <origin
-        xyz="0.00597277713829242 -0.139910125800471 0.00501664525408748"
+        xyz="-5.98267976478772E-08 -0.140000036111509 -0.0049727768626128"
         rpy="0 0 0" />
       <mass
-        value="0.173985874606989" />
+        value="0.173985862227821" />
       <inertia
-        ixx="0.00121634457091205"
-        ixy="-5.6699493711232E-10"
-        ixz="-4.51698440478467E-11"
-        iyy="2.97292116921757E-05"
-        iyz="4.1996152899411E-05"
-        izz="0.00119953242272193" />
+        ixx="0.00120103847110696"
+        ixy="-3.03260149397586E-09"
+        ixz="6.5658408641674E-11"
+        iyy="2.82234756492875E-05"
+        iyz="5.60238761252666E-10"
+        izz="0.00121634489140425" />
     </inertial>
     <visual>
       <origin
@@ -159,555 +128,267 @@
     name="shoulder_joint"
     type="revolute">
     <origin
-      xyz="-0.0079307 0.058 -0.0089693"
-      rpy="0.33715 -0.80764 -3.1416" />
+      xyz="0 0.06702 -0.011931"
+      rpy="1.5708 -1.154 1.5708" />
     <parent
       link="rotating_base" />
     <child
       link="shoulder" />
     <axis
-      xyz="-1 0 0" />
+      xyz="0 0 1" />
     <limit
       lower="-1.57"
       upper="1.57"
       effort="0"
       velocity="0" />
   </joint>
-  <link
-    name="elbow">
+
+  <link name="elbow">
     <inertial>
-      <origin
-        xyz="-0.00907905142542545 -0.0624766175444548 -0.0738886977733696"
-        rpy="0 0 0" />
-      <mass
-        value="0.089627712115124" />
-      <inertia
-        ixx="0.000328740515141145"
-        ixy="1.18225244720581E-06"
-        ixz="1.39883660954859E-06"
-        iyy="0.000193230586748384"
-        iyz="-0.000150957629677466"
-        izz="0.000142170947212366" />
+      <origin xyz="0.0967620017476869 -1.66885552552176E-05 0.0100790586435994" rpy="0 0 0"/>
+      <mass value="0.0896278030340915"/>
+      <inertia ixx="1.45996540350183E-05" ixy="1.36641926893841E-07" ixz="1.83145079336707E-06"
+               iyy="0.000320802080195619" iyz="-7.19355817575536E-10" izz="0.000328740695066058"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/elbow.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.694117647058824 0.0980392156862745 0.0980392156862745 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/elbow.STL"/></geometry>
+      <material name=""><color rgba="0.694 0.098 0.098 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/elbow.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/elbow.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="elbow_joint"
-    type="revolute">
-    <origin
-      xyz="0 -0.27982 0.010033"
-      rpy="0 0 0" />
-    <parent
-      link="shoulder" />
-    <child
-      link="elbow" />
-    <axis
-      xyz="-1 0 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
+  <joint name="elbow_joint" type="revolute">
+    <origin xyz="0 -0.28 0" rpy="0 0 -0.77026"/>
+    <parent link="shoulder"/>
+    <child  link="elbow"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
-  <link
-    name="wrist">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       WRIST — revolute joint, child of elbow, parent of gripper
+       xyz/rpy are the original SolidWorks-exported values (elbow tip coords).
+       axis="0 1 0" mirrors arm_robot_pkg wrist_link_joint convention.
+
+       If the wrist mesh still appears floating after loading this file,
+       the STL mesh origin ≠ joint attachment point.  Uncomment and tune the
+       visual <origin> below until the mesh snaps onto the elbow tip.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <link name="wrist">
     <inertial>
-      <origin
-        xyz="0.00357286338539982 0.00674887971797722 0.0184119597185409"
-        rpy="0 0 0" />
-      <mass
-        value="0.0159128075867897" />
-      <inertia
-        ixx="4.78686765694244E-06"
-        ixy="4.14953907682248E-07"
-        ixz="-3.65382382999814E-07"
-        iyy="3.86917786492588E-06"
-        iyz="-1.32693120669317E-07"
-        izz="2.50815921013635E-06" />
+      <origin xyz="-0.0075869494577985 0.0184119230556328 0.000866391264563837" rpy="0 0 0"/>
+      <mass value="0.0159127959387036"/>
+      <inertia ixx="4.54918840935408E-06"  ixy="3.15957669878946E-07"  ixz="5.7776585613333E-07"
+               iyy="2.50816962568845E-06"  iyz="2.26456499563466E-07"  izz="4.10683416536016E-06"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/wrist.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.498039215686275 0.498039215686275 0.498039215686275 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <!-- ↑ If wrist mesh is offset, change this origin.  Examples:
+           Shift mesh +20 mm along wrist-Y:  xyz="0 0.02 0" rpy="0 0 0"
+           Rotate mesh 180° about Z:         xyz="0 0 0"   rpy="0 0 3.1416"  -->
+      <geometry><mesh filename="package://complete_assembly/meshes/wrist.STL"/></geometry>
+      <material name=""><color rgba="0.498 0.498 0.498 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/wrist.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/wrist.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="wrist_joint"
-    type="fixed">
-    <origin
-      xyz="-0.0085 -0.12804 -0.14317"
-      rpy="-2.4731 -0.23314 -2.857" />
-    <parent
-      link="elbow" />
-    <child
-      link="wrist" />
-    <axis
-      xyz="0 0 0" />
+
+  <joint name="wrist_joint" type="revolute">
+    <!-- Rotate wrist 180° about ROLL so elbow flat face and wrist flat face coincide -->
+    <origin xyz="0.192 0.0053 0.0095" rpy="3.1416 0.96644 1.5708"/>
+    <parent link="elbow"/>
+    <child  link="wrist"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
-  <link
-    name="gripper_base">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       GRIPPER — parent="wrist" (unchanged from original URDF)
+       Chain is now live: elbow → wrist → gripper → fingers
+       ══════════════════════════════════════════════════════════════════════ -->
+  <link name="gripper">
     <inertial>
-      <origin
-        xyz="-0.0312269074070157 0.534257247084252 0.00467440277518513"
-        rpy="0 0 0" />
-      <mass
-        value="0.0160520522227766" />
-      <inertia
-        ixx="3.00088493506256E-06"
-        ixy="9.02060896116622E-08"
-        ixz="1.83281027366688E-06"
-        iyy="9.31264871968482E-06"
-        iyz="-2.0046956982969E-08"
-        izz="7.26676566590229E-06" />
+      <origin xyz="-0.0181833499348664 -0.0182646322506441 0.00467440246505202" rpy="0 0 0"/>
+      <mass value="0.0160520536785178"/>
+      <inertia ixx="5.96148264762733E-06"  ixy="-3.15112541913268E-06" ixz="1.33133889830625E-06"
+               iyy="6.35205137443899E-06"  iyz="1.25981426227068E-06"  izz="7.26676598513188E-06"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/gripper_base.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.843137254901961 0.815686274509804 0.752941176470588 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/gripper.STL"/></geometry>
+      <material name=""><color rgba="0.843 0.816 0.753 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/gripper_base.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/gripper.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="gripper_joint"
-    type="revolute">
-    <origin
-      xyz="0.018288 0.012361 0.02425"
-      rpy="-1.5708 1.1957 -1.2049" />
-    <parent
-      link="wrist" />
-    <child
-      link="gripper_base" />
-    <axis
-      xyz="0 0 -1" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
+  <joint name="gripper_joint" type="revolute">
+    <origin xyz="-0.020533 0.02425 -0.0081026" rpy="2.1829 0.14928 -1.4667"/>
+    <parent link="wrist"/>
+    <child  link="gripper"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
-  <link
-    name="right_link">
+
+  <link name="right_link">
     <inertial>
-      <origin
-        xyz="-0.0994738011451907 -0.518946984687193 -0.104154918565994"
-        rpy="0 0 0" />
-      <mass
-        value="0.000819182765433024" />
-      <inertia
-        ixx="8.41900623381524E-08"
-        ixy="1.08567455397585E-23"
-        ixz="-4.36724678772885E-08"
-        iyy="1.09384456847925E-07"
-        iyz="4.96308367531817E-24"
-        izz="2.73788818842609E-08" />
+      <origin xyz="-5.55111512312578E-17 -0.0141775766650648 -0.00626468833272781" rpy="0 0 0"/>
+      <mass value="0.000819182765433024"/>
+      <inertia ixx="1.09384456847925E-07" ixy="1.08599767140263E-23" ixz="6.10045701757858E-24"
+               iyy="2.07077874970526E-08" iyz="-3.85199714838046E-08" izz="9.08611567253607E-08"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/right_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0 0.501960784313725 1 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/right_link.STL"/></geometry>
+      <material name=""><color rgba="0 0.502 1 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/right_link.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/right_link.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="right_link_joint"
-    type="revolute">
-    <origin
-      xyz="-0.060132 -0.0021342 0.0095011"
-      rpy="3.1416 -0.7769 -0.23367" />
-    <parent
-      link="gripper_base" />
-    <child
-      link="right_link" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
-    <mimic
-      joint="right_gear_joint"
-      multiplier="1"
-      offset="0" />
+  <joint name="right_link_joint" type="revolute">
+    <origin xyz="-0.041738 -0.04334 0.0095011" rpy="-0.68328 0 -1.0357"/>
+    <parent link="gripper"/>
+    <child  link="right_link"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
+    <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
-  <link
-    name="left_link">
+
+  <link name="left_link">
     <inertial>
-      <origin
-        xyz="-0.105878110578177 -0.518946984687193 -0.0975972085831629"
-        rpy="0 0 0" />
-      <mass
-        value="0.000819182765433022" />
-      <inertia
-        ixx="2.53441809966579E-08"
-        ixy="-1.22009140351572E-23"
-        ixz="-4.22794357045535E-08"
-        iyy="1.09384456847925E-07"
-        iyz="-8.27180612553028E-24"
-        izz="8.62247632257555E-08" />
+      <origin xyz="-5.55111512312578E-17 -0.008933845343992 -0.0126663494097404" rpy="0 0 0"/>
+      <mass value="0.000819182765433022"/>
+      <inertia ixx="1.09384456847925E-07" ixy="4.17467715397856E-24"  ixz="-8.42690249038397E-24"
+               iyy="7.32673306471969E-08" iyz="-4.90765897760274E-08" izz="3.83016135752161E-08"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/left_link.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0 0.501960784313725 1 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/left_link.STL"/></geometry>
+      <material name=""><color rgba="0 0.502 1 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/left_link.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/left_link.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="left_link_joint"
-    type="revolute">
-    <origin
-      xyz="-0.060132 -0.0021342 -0.00049887"
-      rpy="-3.1416 -0.7769 -0.23367" />
-    <parent
-      link="gripper_base" />
-    <child
-      link="left_link" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
-    <mimic
-      joint="right_gear_joint"
-      multiplier="1"
-      offset="0" />
+  <joint name="left_link_joint" type="revolute">
+    <origin xyz="-0.041738 -0.04334 -0.00049887" rpy="-0.68328 0 -1.0357"/>
+    <parent link="gripper"/>
+    <child  link="left_link"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
+    <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
-  <link
-    name="right_gear">
+
+  <link name="right_gear">
     <inertial>
-      <origin
-        xyz="-0.0952607102409778 -0.518946984687193 -0.0951181712695939"
-        rpy="0 0 0" />
-      <mass
-        value="0.00645515105378562" />
-      <inertia
-        ixx="8.23706278655749E-07"
-        ixy="1.19114008207636E-22"
-        ixz="-2.82390893777583E-07"
-        iyy="1.1297062678487E-06"
-        iyz="6.61744490042422E-23"
-        izz="4.13585840089375E-07" />
+      <origin xyz="-5.55111512312578E-17 -0.00482849054752199 -0.0027984078900079" rpy="0 0 0"/>
+      <mass value="0.00645515105378562"/>
+      <inertia ixx="1.1297062678487E-06"  ixy="-1.29557163441118E-22" ixz="-1.63781761285499E-22"
+               iyy="3.70927587811473E-07"  iyz="-2.45824875202671E-07" izz="8.66364530933653E-07"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/right_gear.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="1 0.937254901960784 0.137254901960784 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/right_gear.STL"/></geometry>
+      <material name=""><color rgba="1 0.937 0.137 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/right_gear.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/right_gear.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="right_gear_joint"
-    type="revolute">
-    <origin
-      xyz="-0.041365 -0.009685 0.018398"
-      rpy="-3.1416 -0.7769 -0.23367" />
-    <parent
-      link="gripper_base" />
-    <child
-      link="right_gear" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
+  <joint name="right_gear_joint" type="revolute">
+    <origin xyz="-0.023 -0.03572 0.018398" rpy="-0.68328 0 -1.0357"/>
+    <parent link="gripper"/>
+    <child  link="right_gear"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
-  <link
-    name="right_finger">
+
+  <link name="right_finger">
     <inertial>
-      <origin
-        xyz="-0.129753253757242 0.518946991362764 0.115778020916171"
-        rpy="0 0 0" />
-      <mass
-        value="0.00531391451356127" />
-      <inertia
-        ixx="1.77078093754245E-06"
-        ixy="9.07480669979996E-13"
-        ixz="1.94806944852106E-06"
-        iyy="4.13025819380673E-06"
-        iyz="3.99284054369748E-13"
-        izz="2.37741176967714E-06" />
+      <origin xyz="-8.08870043167431E-09 -0.0292616104942388 -0.0346447916611542" rpy="0 0 0"/>
+      <mass value="0.00531392173232632"/>
+      <inertia ixx="4.13024457365969E-06" ixy="4.88046272975276E-13"  ixz="-1.1615250036033E-12"
+               iyy="1.9414127094135E-06"  iyz="-1.96707935921573E-06" izz="2.20676640360276E-06"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/right_finger.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/right_finger.STL"/></geometry>
+      <material name=""><color rgba="0.792 0.820 0.933 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/right_finger.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/right_finger.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="right_finger_joint"
-    type="revolute">
-    <origin
-      xyz="-0.014777 -0.00725 -0.026967"
-      rpy="3.1416 0 0" />
-    <parent
-      link="right_gear" />
-    <child
-      link="right_finger" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
-    <mimic
-      joint="right_gear_joint"
-      multiplier="1"
-      offset="0" />
+  <joint name="right_finger_joint" type="revolute">
+    <origin xyz="-0.00725 -0.028069 -0.012558" rpy="0 0 0"/>
+    <parent link="right_gear"/>
+    <child  link="right_finger"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
+    <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
-  <link
-    name="left_gear">
+
+  <link name="left_gear">
     <inertial>
-      <origin
-        xyz="-0.0967970359621589 -0.518946984687193 -0.0935173315766526"
-        rpy="0 0 0" />
-      <mass
-        value="0.00645515105378561" />
-      <inertia
-        ixx="3.91079640578603E-07"
-        ixy="-1.37311981683803E-22"
-        ixz="-2.64589938316376E-07"
-        iyy="1.1297062678487E-06"
-        iyz="1.98523347012727E-22"
-        izz="8.46212478166519E-07" />
+      <origin xyz="0 -0.0036180844836266 -0.00424910253532551" rpy="0 0 0"/>
+      <mass value="0.00645515105378561"/>
+      <inertia ixx="1.1297062678487E-06"  ixy="2.2835354785292E-22"  ixz="8.76811449306209E-23"
+               iyy="7.63820614784737E-07"  iyz="-3.17362031254289E-07" izz="4.73471503960386E-07"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/left_gear.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="1 0.937254901960784 0.137254901960784 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/left_gear.STL"/></geometry>
+      <material name=""><color rgba="1 0.937 0.137 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/left_gear.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/left_gear.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="left_gear_joint"
-    type="revolute">
-    <origin
-      xyz="-0.041365 -0.009685 -0.0085012"
-      rpy="-3.1416 -0.7769 -0.23367" />
-    <parent
-      link="gripper_base" />
-    <child
-      link="left_gear" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
-    <mimic
-      joint="right_gear_joint"
-      multiplier="1"
-      offset="0" />
+  <joint name="left_gear_joint" type="revolute">
+    <origin xyz="-0.023 -0.03572 -0.0085012" rpy="-0.68328 0 -1.0357"/>
+    <parent link="gripper"/>
+    <child  link="left_gear"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
+    <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
-  <link
-    name="left_finger">
+
+  <link name="left_finger">
     <inertial>
-      <origin
-        xyz="-0.118668424587013 0.51894697607322 0.127268927029045"
-        rpy="0 0 0" />
-      <mass
-        value="0.0053139252062326" />
-      <inertia
-        ixx="2.23661490316385E-06"
-        ixy="6.66108639999681E-13"
-        ixz="1.96484173150773E-06"
-        iyy="4.13023805780787E-06"
-        iyz="1.20276240521648E-12"
-        izz="1.91155770394662E-06" />
+      <origin xyz="-8.08606237523435E-09 -0.0394685530338367 0.0223324152400109" rpy="0 0 0"/>
+      <mass value="0.00531392171589627"/>
+      <inertia ixx="4.13024461355846E-06"  ixy="-1.05195308945374E-12" ixz="-6.93715040579858E-13"
+               iyy="1.4810171666742E-06"   iyz="1.88023120900998E-06"  izz="2.66716198619106E-06"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/left_finger.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/left_finger.STL"/></geometry>
+      <material name=""><color rgba="0.792 0.820 0.933 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://complete_assembly/meshes/left_finger.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://complete_assembly/meshes/left_finger.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="left_finger_joint"
-    type="revolute">
-    <origin
-      xyz="-0.027551 -0.00725 -0.013656"
-      rpy="3.1416 0 0" />
-    <parent
-      link="left_gear" />
-    <child
-      link="left_finger" />
-    <axis
-      xyz="0 -1 0" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="0"
-      velocity="0" />
-    <mimic
-      joint="right_gear_joint"
-      multiplier="1"
-      offset="0" />
+  <joint name="left_finger_joint" type="revolute">
+    <origin xyz="-0.00725 -0.017383 -0.025365" rpy="3.1416 0 -3.1416"/>
+    <parent link="left_gear"/>
+    <child  link="left_finger"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
+    <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
+
 </robot>

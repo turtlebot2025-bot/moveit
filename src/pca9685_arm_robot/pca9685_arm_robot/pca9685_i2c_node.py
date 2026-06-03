@@ -61,12 +61,12 @@ _PWM_STEPS     = 4096
 # Format: channel, min_pulse_us, max_pulse_us, urdf_limit_rad, home_deg
 _JOINT_CONFIG = {
     "rotating_base_joint":     {"channel": 2, "min_pulse_us": 280, "max_pulse_us": 2540,
-                       "urdf_limit_rad": 1.046, "home_deg": 0.0},
-    "shoulder_link_joint": {"channel": 0, "min_pulse_us":  1358, "max_pulse_us": 2058,
-                       "urdf_limit_rad": 1.046, "home_deg": 0.0},
-    "Elbow_link_joint":    {"channel": 1, "min_pulse_us":  370, "max_pulse_us": 2630,
-                       "urdf_limit_rad": 1.046, "home_deg": 0.0},
-    "wrist_link_joint":    {"channel": 3, "min_pulse_us":  530, "max_pulse_us": 2310,
+                       "urdf_limit_rad": 3.14, "home_deg": 0.0},
+    "shoulder_joint": {"channel": 0, "min_pulse_us":  1358, "max_pulse_us": 2058,
+                       "urdf_limit_rad": 1.57, "home_deg": 0.0},
+    "elbow_joint":    {"channel": 1, "min_pulse_us":  370, "max_pulse_us": 2630,
+                       "urdf_limit_rad": 1.57, "home_deg": 0.0},
+    "wrist_joint":    {"channel": 3, "min_pulse_us":  530, "max_pulse_us": 2310,
                        "urdf_limit_rad": 1.570, "home_deg": 0.0},
     "gripper_joint":  {"channel": 4, "min_pulse_us":  620, "max_pulse_us": 2760,
                        "urdf_limit_rad": 1.570, "home_deg": 0.0},
@@ -74,9 +74,9 @@ _JOINT_CONFIG = {
 
 JOINT_ORDER = [
     "rotating_base_joint",
-    "shoulder_link_joint",
-    "Elbow_link_joint",
-    "wrist_link_joint",
+    "shoulder_joint",
+    "elbow_joint",
+    "wrist_joint",
     "gripper_joint",
 ]
 

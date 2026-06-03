@@ -42,13 +42,32 @@ import time
 # ── Joint name lists (must match controllers.yaml) ────────────────────────────
 ARM_JOINTS = [
     "rotating_base_joint",
-    "shoulder_link_joint",
-    "Elbow_link_joint",
-    "wrist_link_joint",
+    "shoulder_joint",
+    "elbow_joint",
+    "wrist_joint",
+    "gripper_joint",
+    "right_link_joint",
+    "left_link_joint",
+    "right_gear_joint",
+    "right_finger_joint",
+    "left_gear_joint",
+    "left_finger_joint"
+
+
+
+
 ]
 
 GRIPPER_JOINTS = [
     "gripper_joint",
+    "right_link_joint",
+    "left_link_joint",
+    "right_gear_joint",
+    "right_finger_joint",
+    "left_gear_joint",
+    "left_finger_joint"
+
+
 ]
 
 # ── Gripper positions ─────────────────────────────────────────────────────────

@@ -1,0 +1,11 @@
+<library path="pca9685_arm_robot_hardware">
+  <class
+    name="pca9685_arm_robot_hardware/PCA9685ArmRobot"
+    type="pca9685_arm_robot_hardware::PCA9685ArmRobotSystem"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      PCA9685-based servo arm ros2_control SystemInterface.
+    </description>
+  </class>
+</library>
+

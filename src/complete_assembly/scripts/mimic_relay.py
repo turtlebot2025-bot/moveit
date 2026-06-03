@@ -9,10 +9,10 @@ class MimicRelay(Node):
 
         # Master -> [mimic joints] with their multiplier/offset from URDF
         self.mimic_map = {
-            'left_gear_joint': {
+            'right_gear_joint': {
                 'right_link_joint':   {'multiplier':  1.0, 'offset': 0.0},
                 'left_link_joint':    {'multiplier':  1.0, 'offset': 0.0},
-                'right_gear_joint':   {'multiplier':  1.0, 'offset': 0.0},
+                'left_gear_joint':   {'multiplier':  1.0, 'offset': 0.0},
                 'right_finger_joint': {'multiplier':  1.0, 'offset': 0.0},
                 'left_finger_joint':  {'multiplier':  1.0, 'offset': 0.0},
             }

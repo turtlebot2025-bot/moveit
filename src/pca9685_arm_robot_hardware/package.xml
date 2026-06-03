@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd"
+            schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>pca9685_arm_robot_hardware</name>
+  <version>0.1.0</version>
+  <description>
+    ros2_control hardware_interface::SystemInterface plugin that drives a PCA9685
+    servo controller over I2C for the pca9685_arm_robot arm.
+  </description>
+
+  <maintainer email="tashenlrana@gmail.com">cojetson</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <hardware_interface plugin="${prefix}/pca9685_arm_robot_hardware_plugin.xml"/>
+  </export>
+</package>
+
