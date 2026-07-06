@@ -1,7 +1,17 @@
-# Minimal MoveIt controller mapping for ros2_control.
+# config/moveit_controllers.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# MoveIt controller mapping — mirrors controllers.yaml exactly.
+# If you are not using MoveIt, this file is harmless (installed by setup.py).
 #
-# If you are not using MoveIt, this file is harmless. It is installed because
-# `setup.py` expects it.
+# Joint ownership matches controllers.yaml:
+#   arm_controller     → rotating_base_joint, shoulder_joint, elbow_joint,
+#                        wrist_joint, gripper_joint
+#   gripper_controller → right_gear_joint  (finger open/close actuator, ch 5)
+#
+# Mimic joints (right_link_joint, left_link_joint, left_gear_joint,
+# right_finger_joint, left_finger_joint) are NOT listed here — they have no
+# command interface and are never commanded by a controller.
+# ─────────────────────────────────────────────────────────────────────────────
 moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
 
 moveit_simple_controller_manager:
@@ -18,11 +28,11 @@ moveit_simple_controller_manager:
       - shoulder_joint
       - elbow_joint
       - wrist_joint
+      - gripper_joint         # gripper body rotation (ch 4)
 
   gripper_controller:
     type: FollowJointTrajectory
     action_ns: follow_joint_trajectory
     default: true
     joints:
-      - gripper_joint
-
+      - right_gear_joint      # finger open/close actuator (ch 5)

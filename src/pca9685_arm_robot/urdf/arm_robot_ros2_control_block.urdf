@@ -1,29 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- complete_assembly.urdf — wrist correctly placed between elbow and gripper
+<!-- complete_assembly.urdf
      ─────────────────────────────────────────────────────────────────────────
-     ROOT CAUSE of disconnected wrist in RViz:
-       The original wrist_joint was type="fixed" — a dead-end branch — so
-       robot_state_publisher never propagated the TF from elbow→wrist→gripper.
-       The gripper appeared attached to "wrist" but wrist itself had no live TF.
+     5-DOF arm + parallel gripper for pca9685_arm_robot package.
 
-     CHANGES (only these two joints touched):
-       1. wrist_joint  : type="fixed"   → type="revolute"
-                         axis added     : xyz="0 1 0"
-                         limits added   : ±1.57 rad, effort 1, velocity 1
-                         origin xyz/rpy : UNCHANGED (SolidWorks-exported values)
+     ros2_control plugin:  pca9685_arm_robot/PCA9685ArmRobot
+     I2C:                  Jetson AGX Orin bus 7, PCA9685 addr 0x40
 
-       2. gripper_joint: parent already = "wrist" — NO CHANGE NEEDED.
+     Channel map:
+       ch 0  shoulder_joint       (±1.57 rad, pulse 1358–2058 µs)
+       ch 1  elbow_joint          (±1.57 rad, pulse  370–2630 µs)
+       ch 2  rotating_base_joint  (±3.14 rad, pulse  280–2540 µs)
+       ch 3  wrist_joint          (±1.57 rad, pulse  530–2310 µs)
+       ch 4  gripper_joint        (±1.57 rad, pulse  620–2760 µs)
+       ch 5  right_gear_joint     (±1.57 rad, pulse  620–2760 µs) — finger actuator
+       ch-1  mimic joints         (no servo — state from right_gear_joint × 1 + 0)
 
-     Resulting chain:
-       world → fixed_base → rotating_base → shoulder → elbow
-               → wrist  (revolute, wrist_joint)
-               → gripper (revolute, gripper_joint)
-               → right_gear / left_gear / right_link / left_link (+ fingers)
-
-     If wrist mesh still appears offset after loading this URDF, the STL mesh
-     origin in SolidWorks does not sit at the joint attachment point.  Fix by
-     adding a <visual><origin xyz="dx dy dz" rpy="…"/></visual> correction to
-     the wrist link (see comment inside the wrist link below).
+     Controller ownership:
+       arm_controller      → rotating_base, shoulder, elbow, wrist, gripper_joint
+       gripper_controller  → right_gear_joint only
+       joint_state_broadcaster → all 11 joints
+     ─────────────────────────────────────────────────────────────────────────
 -->
 <robot name="complete_assembly">
 
@@ -41,6 +37,7 @@
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
 
+  <!-- ── fixed_base ───────────────────────────────────────────────────────── -->
   <link name="fixed_base">
     <inertial>
       <origin xyz="-0.0129802138796697 0.0289181576077138 -0.0243127481279135" rpy="0 0 0"/>
@@ -59,6 +56,7 @@
     </collision>
   </link>
 
+  <!-- ── rotating_base ────────────────────────────────────────────────────── -->
   <link name="rotating_base">
     <inertial>
       <origin xyz="0.00892579137353103 0.0440191723132462 -0.00543608203143876" rpy="0 0 0"/>
@@ -84,65 +82,33 @@
     <limit lower="-3.14" upper="3.14" effort="1" velocity="1"/>
   </joint>
 
-    <link
-    name="shoulder">
+  <!-- ── shoulder ─────────────────────────────────────────────────────────── -->
+  <link name="shoulder">
     <inertial>
-      <origin
-        xyz="-5.98267976478772E-08 -0.140000036111509 -0.0049727768626128"
-        rpy="0 0 0" />
-      <mass
-        value="0.173985862227821" />
-      <inertia
-        ixx="0.00120103847110696"
-        ixy="-3.03260149397586E-09"
-        ixz="6.5658408641674E-11"
-        iyy="2.82234756492875E-05"
-        iyz="5.60238761252666E-10"
-        izz="0.00121634489140425" />
+      <origin xyz="-5.98267976478772E-08 -0.140000036111509 -0.0049727768626128" rpy="0 0 0"/>
+      <mass value="0.173985862227821"/>
+      <inertia ixx="0.00120103847110696" ixy="-3.03260149397586E-09" ixz="6.5658408641674E-11"
+               iyy="2.82234756492875E-05" iyz="5.60238761252666E-10"  izz="0.00121634489140425"/>
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://pca9685_arm_robot/meshes/shoulder.STL" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="0.694117647058824 0.0980392156862745 0.0980392156862745 1" />
-      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://pca9685_arm_robot/meshes/shoulder.STL"/></geometry>
+      <material name=""><color rgba="0.694 0.098 0.098 1"/></material>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://pca9685_arm_robot/meshes/shoulder.STL" />
-      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://pca9685_arm_robot/meshes/shoulder.STL"/></geometry>
     </collision>
   </link>
-  <joint
-    name="shoulder_joint"
-    type="revolute">
-    <origin
-      xyz="0 0.06702 -0.011931"
-      rpy="1.5708 -1.154 1.5708" />
-    <parent
-      link="rotating_base" />
-    <child
-      link="shoulder" />
-    <axis
-      xyz="0 0 1" />
-    <limit
-      lower="-1.57"
-      upper="1.57"
-      effort="1"
-      velocity="1" />
+  <joint name="shoulder_joint" type="revolute">
+    <origin xyz="0 0.06702 -0.011931" rpy="1.5708 -1.154 1.5708"/>
+    <parent link="rotating_base"/>
+    <child  link="shoulder"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
 
+  <!-- ── elbow ────────────────────────────────────────────────────────────── -->
   <link name="elbow">
     <inertial>
       <origin xyz="0.0967620017476869 -1.66885552552176E-05 0.0100790586435994" rpy="0 0 0"/>
@@ -168,27 +134,16 @@
     <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       WRIST — revolute joint, child of elbow, parent of gripper
-       xyz/rpy are the original SolidWorks-exported values (elbow tip coords).
-       axis="0 1 0" mirrors arm_robot_pkg wrist_link_joint convention.
-
-       If the wrist mesh still appears floating after loading this file,
-       the STL mesh origin ≠ joint attachment point.  Uncomment and tune the
-       visual <origin> below until the mesh snaps onto the elbow tip.
-       ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ── wrist ────────────────────────────────────────────────────────────── -->
   <link name="wrist">
     <inertial>
       <origin xyz="-0.0075869494577985 0.0184119230556328 0.000866391264563837" rpy="0 0 0"/>
       <mass value="0.0159127959387036"/>
-      <inertia ixx="4.54918840935408E-06"  ixy="3.15957669878946E-07"  ixz="5.7776585613333E-07"
-               iyy="2.50816962568845E-06"  iyz="2.26456499563466E-07"  izz="4.10683416536016E-06"/>
+      <inertia ixx="4.54918840935408E-06" ixy="3.15957669878946E-07"  ixz="5.7776585613333E-07"
+               iyy="2.50816962568845E-06" iyz="2.26456499563466E-07"  izz="4.10683416536016E-06"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <!-- ↑ If wrist mesh is offset, change this origin.  Examples:
-           Shift mesh +20 mm along wrist-Y:  xyz="0 0.02 0" rpy="0 0 0"
-           Rotate mesh 180° about Z:         xyz="0 0 0"   rpy="0 0 3.1416"  -->
       <geometry><mesh filename="package://pca9685_arm_robot/meshes/wrist.STL"/></geometry>
       <material name=""><color rgba="0.498 0.498 0.498 1"/></material>
     </visual>
@@ -197,9 +152,7 @@
       <geometry><mesh filename="package://pca9685_arm_robot/meshes/wrist.STL"/></geometry>
     </collision>
   </link>
-
   <joint name="wrist_joint" type="revolute">
-    <!-- Rotate wrist 180° about ROLL so elbow flat face and wrist flat face coincide -->
     <origin xyz="0.192 0.0053 0.0095" rpy="3.1416 0.96644 1.5708"/>
     <parent link="elbow"/>
     <child  link="wrist"/>
@@ -207,20 +160,13 @@
     <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
 
-  <!-- ros2_control hardware interface.
-       We use mock hardware for controller_manager and drive the real PCA9685
-       via `pca9685_i2c_node` listening to `/joint_states`. -->
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       GRIPPER — parent="wrist" (unchanged from original URDF)
-       Chain is now live: elbow → wrist → gripper → fingers
-       ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ── gripper body ──────────────────────────────────────────────────────── -->
   <link name="gripper">
     <inertial>
       <origin xyz="-0.0181833499348664 -0.0182646322506441 0.00467440246505202" rpy="0 0 0"/>
       <mass value="0.0160520536785178"/>
-      <inertia ixx="5.96148264762733E-06"  ixy="-3.15112541913268E-06" ixz="1.33133889830625E-06"
-               iyy="6.35205137443899E-06"  iyz="1.25981426227068E-06"  izz="7.26676598513188E-06"/>
+      <inertia ixx="5.96148264762733E-06" ixy="-3.15112541913268E-06" ixz="1.33133889830625E-06"
+               iyy="6.35205137443899E-06" iyz="1.25981426227068E-06"  izz="7.26676598513188E-06"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -240,6 +186,7 @@
     <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
 
+  <!-- ── right_link ────────────────────────────────────────────────────────── -->
   <link name="right_link">
     <inertial>
       <origin xyz="-5.55111512312578E-17 -0.0141775766650648 -0.00626468833272781" rpy="0 0 0"/>
@@ -266,6 +213,7 @@
     <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
 
+  <!-- ── left_link ─────────────────────────────────────────────────────────── -->
   <link name="left_link">
     <inertial>
       <origin xyz="-5.55111512312578E-17 -0.008933845343992 -0.0126663494097404" rpy="0 0 0"/>
@@ -292,6 +240,7 @@
     <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
 
+  <!-- ── right_gear ────────────────────────────────────────────────────────── -->
   <link name="right_gear">
     <inertial>
       <origin xyz="-5.55111512312578E-17 -0.00482849054752199 -0.0027984078900079" rpy="0 0 0"/>
@@ -317,6 +266,7 @@
     <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
   </joint>
 
+  <!-- ── right_finger ──────────────────────────────────────────────────────── -->
   <link name="right_finger">
     <inertial>
       <origin xyz="-8.08870043167431E-09 -0.0292616104942388 -0.0346447916611542" rpy="0 0 0"/>
@@ -343,6 +293,7 @@
     <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
 
+  <!-- ── left_gear ─────────────────────────────────────────────────────────── -->
   <link name="left_gear">
     <inertial>
       <origin xyz="0 -0.0036180844836266 -0.00424910253532551" rpy="0 0 0"/>
@@ -369,6 +320,7 @@
     <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
 
+  <!-- ── left_finger ───────────────────────────────────────────────────────── -->
   <link name="left_finger">
     <inertial>
       <origin xyz="-8.08606237523435E-09 -0.0394685530338367 0.0223324152400109" rpy="0 0 0"/>
@@ -395,28 +347,24 @@
     <mimic joint="right_gear_joint" multiplier="1" offset="0"/>
   </joint>
 
-
-
-
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       ros2_control block
+       Plugin:  pca9685_arm_robot/PCA9685ArmRobot  (Python, loaded via pluginlib)
+       Using mock_components/GenericSystem so pluginlib finds a C++ plugin;
+       pca9685_i2c_node (Python) handles real I2C via /joint_states subscription.
+       ═══════════════════════════════════════════════════════════════════════ -->
   <ros2_control name="pca9685_arm_robot" type="system">
 
     <hardware>
-      <plugin>pca9685_arm_robot_hardware/PCA9685ArmRobot</plugin>
-      <param name="i2c_bus">7</param>
-      <param name="i2c_address">0x40</param>
-      <param name="pwm_frequency">50</param>
+      <!-- mock_components/GenericSystem is a built-in C++ plugin that always
+           loads successfully.  Real servo driving is done by pca9685_i2c_node
+           which subscribes to /joint_states published by joint_state_broadcaster. -->
+      <plugin>mock_components/GenericSystem</plugin>
     </hardware>
 
-    <!-- ── base_joint  (rotating_base_joint  ±1.046 rad) ──────────────
-         Maps to PCA9685 channel 2.
-         URDF: 0 rad = robot home = servo centre (1500 µs)
-         Run calibrate_servos.py to find your servo's actual min/max.        -->
+    <!-- ── Actuated joints ──────────────────────────────────────────────── -->
+
     <joint name="rotating_base_joint">
-      <param name="channel">2</param>
-      <param name="min_pulse_us">280</param>    <!-- servo at -1.046 rad -->
-      <param name="max_pulse_us">2540</param>   <!-- servo at +1.046 rad -->
-      <param name="urdf_limit_rad">3.14</param>
-      <param name="home_angle_deg">0</param>
       <command_interface name="position">
         <param name="min">-3.14</param>
         <param name="max"> 3.14</param>
@@ -424,14 +372,7 @@
       <state_interface name="position"/>
     </joint>
 
-    <!-- ── shoulder_joint  (shoulder_link_joint  ±1.046 rad) ──────────
-         Maps to PCA9685 channel 0.                                          -->
     <joint name="shoulder_joint">
-      <param name="channel">0</param>
-      <param name="min_pulse_us">1358</param>
-      <param name="max_pulse_us">2058</param>
-      <param name="urdf_limit_rad">1.57</param>
-      <param name="home_angle_deg">0</param>
       <command_interface name="position">
         <param name="min">-1.57</param>
         <param name="max"> 1.57</param>
@@ -439,14 +380,7 @@
       <state_interface name="position"/>
     </joint>
 
-    <!-- ── elbow_joint  (Elbow_link_joint  ±1.046 rad) ────────────────
-         Maps to PCA9685 channel 1.                                          -->
     <joint name="elbow_joint">
-      <param name="channel">1</param>
-      <param name="min_pulse_us">370</param>
-      <param name="max_pulse_us">2630</param>
-      <param name="urdf_limit_rad">1.57</param>
-      <param name="home_angle_deg">0</param>
       <command_interface name="position">
         <param name="min">-1.57</param>
         <param name="max"> 1.57</param>
@@ -454,32 +388,55 @@
       <state_interface name="position"/>
     </joint>
 
-    <!-- ── wrist_joint  (wrist_link_joint  ±1.57 rad) ─────────────────
-         Maps to PCA9685 channel 3.                                          -->
     <joint name="wrist_joint">
-      <param name="channel">3</param>
-      <param name="min_pulse_us">530</param>
-      <param name="max_pulse_us">2310</param>
-      <param name="urdf_limit_rad">1.570</param>
-      <param name="home_angle_deg">0</param>
-      <command_interface name="position"/>
+      <command_interface name="position">
+        <param name="min">-1.57</param>
+        <param name="max"> 1.57</param>
+      </command_interface>
       <state_interface name="position"/>
     </joint>
 
-    <!-- ── gripper_joint  (±1.57 rad) ─────────────────────────────────
-         Maps to PCA9685 channel 4.
-         home_angle_deg = 0 = gripper fully open at neutral.
-         Change to a positive value if your gripper rests closed.            -->
     <joint name="gripper_joint">
-      <param name="channel">4</param>
-      <param name="min_pulse_us">620</param>
-      <param name="max_pulse_us">2760</param>
-      <param name="urdf_limit_rad">1.570</param>
-      <param name="home_angle_deg">0</param>
-      <command_interface name="position"/>
+      <command_interface name="position">
+        <param name="min">-1.57</param>
+        <param name="max"> 1.57</param>
+      </command_interface>
       <state_interface name="position"/>
     </joint>
-  </ros2_control>
 
+    <!-- PRIMARY finger actuator — all mimic joints follow this one -->
+    <joint name="right_gear_joint">
+      <command_interface name="position">
+        <param name="min">-1.57</param>
+        <param name="max"> 1.57</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
+
+    <!-- ── Mimic joints — state interfaces only, no command interface ───── -->
+    <!-- robot_state_publisher propagates right_gear_joint state to these    -->
+    <!-- via URDF <mimic> tags. pca9685_i2c_node skips them (no servo).     -->
+
+    <joint name="right_link_joint">
+      <state_interface name="position"/>
+    </joint>
+
+    <joint name="left_link_joint">
+      <state_interface name="position"/>
+    </joint>
+
+    <joint name="left_gear_joint">
+      <state_interface name="position"/>
+    </joint>
+
+    <joint name="right_finger_joint">
+      <state_interface name="position"/>
+    </joint>
+
+    <joint name="left_finger_joint">
+      <state_interface name="position"/>
+    </joint>
+
+  </ros2_control>
 
 </robot>

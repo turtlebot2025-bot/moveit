@@ -5,41 +5,70 @@
   <name>pca9685_arm_robot</name>
   <version>0.1.0</version>
   <description>
-    ros2_control SystemInterface plugin for arm_robot_pkg — a 5-DOF
-    servo arm (base, shoulder, elbow, wrist, gripper) driven by a PCA9685
-    PWM controller over I2C on the Jetson AGX Orin.
+    ROS 2 package for complete_assembly — 5-DOF servo arm with parallel
+    gripper (right_gear_joint + 5 mimic joints), driven by a PCA9685
+    PWM controller over I2C (bus 7) on the Jetson AGX Orin.
+    Includes: pca9685_i2c_node (hardware bridge), pick_and_place,
+    calibrate_servos, display_launch, and vision_pick_place nodes.
   </description>
 
   <maintainer email="tashenlrana@gmail.com">cojetson</maintainer>
   <license>Apache-2.0</license>
 
-  <!-- Pure Python package: uses ament_python, NOT ament_cmake -->
+  <!-- Pure Python package — uses ament_python, NOT ament_cmake.
+       No pluginlib export needed: URDF uses mock_components/GenericSystem
+       (a built-in C++ plugin) so pluginlib does not need to find a Python class. -->
   <buildtool_depend>ament_python</buildtool_depend>
 
-  <!-- Runtime ROS 2 dependencies -->
+  <!-- ── Core ROS 2 runtime dependencies ──────────────────────────────────── -->
   <depend>rclpy</depend>
   <depend>hardware_interface</depend>
   <depend>controller_manager</depend>
   <depend>pluginlib</depend>
+  <depend>robot_state_publisher</depend>
   <depend>joint_state_broadcaster</depend>
   <depend>joint_trajectory_controller</depend>
-  <depend>robot_state_publisher</depend>
 
-  <!-- Python library for I2C communication with PCA9685 -->
+  <!-- ── Message types used by pca9685_i2c_node and pick_and_place ─────────── -->
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>builtin_interfaces</depend>
+
+  <!-- ── TF2 (used by vision_pick_place for camera→base transform) ─────────── -->
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <!-- ── Vision / camera dependencies ─────────────────────────────────────── -->
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>message_filters</depend>
+
+  <!-- ── MoveIt 2 (optional — only needed if using MoveIt planning) ────────── -->
+  <exec_depend>moveit_ros_planning_interface</exec_depend>
+  <exec_depend>moveit_simple_controller_manager</exec_depend>
+
+  <!-- ── RViz display launch ────────────────────────────────────────────────── -->
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <!-- ── Python I2C library for PCA9685 ────────────────────────────────────── -->
   <exec_depend>python3-smbus2</exec_depend>
 
-  <!-- Test dependencies -->
+  <!-- ── Test dependencies ─────────────────────────────────────────────────── -->
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
 
-
-
-
   <export>
-    <!-- This MUST be ament_python for a pure Python package -->
-    <hardware_interface plugin="${prefix}/pca9685_arm_robot_plugin.xml"/>
+    <!-- ament_python build type — required, must be last in <export> block -->
     <build_type>ament_python</build_type>
+    <!-- NOTE: No <hardware_interface plugin="..."/> here.
+         That tag registers C++ pluginlib plugins and is only valid in
+         ament_cmake packages. This package uses mock_components/GenericSystem
+         (already registered by ros2_control) so no registration is needed. -->
   </export>
 </package>

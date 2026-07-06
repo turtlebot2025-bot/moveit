@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: pca9685_arm_robot
+Version: 0.1.0
+Summary: ROS 2 package for complete_assembly — 5-DOF servo arm with parallel gripper (right_gear_joint + 5 mimic joints), driven by a PCA9685 over I2C (bus 7) on the Jetson AGX Orin. Includes hardware bridge (pca9685_i2c_node), pick_and_place, servo calibration, and RViz display launch.
+Maintainer: Tashen
+Maintainer-email: tashenlrana@gmail.com
+License: Apache-2.0
+Requires-Dist: setuptools
+Dynamic: license
+Dynamic: maintainer
+Dynamic: maintainer-email
+Dynamic: requires-dist
+Dynamic: summary

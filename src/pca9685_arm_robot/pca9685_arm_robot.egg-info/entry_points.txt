@@ -1,0 +1,4 @@
+[console_scripts]
+calibrate_servos = pca9685_arm_robot.calibrate_servos:main
+pca9685_i2c_node = pca9685_arm_robot.pca9685_i2c_node:main
+pick_and_place = pca9685_arm_robot.pick_and_place:main

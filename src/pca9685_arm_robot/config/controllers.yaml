@@ -1,15 +1,18 @@
-# config/controllers.yaml
+# controllers.yaml — complete_assembly (5-DOF arm + parallel gripper)
 # ─────────────────────────────────────────────────────────────────────────────
-# ros2_control controller manager configuration for pca9685_arm_robot.
+# Controller ownership (must match ros2_control block in complete_assembly.urdf):
 #
-# Joint names MUST match the <joint name="..."> tags in the URDF
-# ros2_control block exactly:
-#   rotating_base_joint | shoulder_joint | elbow_joint | wrist_joint | gripper_joint
+#   arm_controller      → rotating_base_joint, shoulder_joint, elbow_joint,
+#                         wrist_joint, gripper_joint (body rotation, ch 4)
 #
-# Two controllers:
-#   joint_state_broadcaster  — publishes /joint_states for TF and MoveIt 2
-#   arm_controller           — executes JointTrajectory goals (arm joints)
-#   gripper_controller       — executes JointTrajectory goals (gripper joint)
+#   gripper_controller  → right_gear_joint ONLY (ch 5, finger open/close)
+#
+#   joint_state_broadcaster → ALL 11 joints (actuated + mimic)
+#
+# Mimic joints (right_link_joint, left_link_joint, left_gear_joint,
+# right_finger_joint, left_finger_joint) are NOT listed in any trajectory
+# controller — they have state interfaces only and no servo.
+# robot_state_publisher derives their TF from right_gear_joint via URDF <mimic>.
 # ─────────────────────────────────────────────────────────────────────────────
 
 controller_manager:
@@ -26,49 +29,15 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
 
 
-# ── Arm trajectory controller ────────────────────────────────────────────────
+# ── Arm controller (5 DOFs — excludes finger actuator and all mimic joints) ──
 arm_controller:
   ros__parameters:
     joints:
-      - rotating_base_joint
-      - shoulder_joint
-      - elbow_joint
-      - wrist_joint
-
-    command_interfaces:
-      - position
-
-    state_interfaces:
-      - position
-
-    # Servos have built-in position control; no velocity/accel commands needed
-    allow_partial_joints_goal: true
-
-    # Goal tolerance — declare success when error < this value
-    constraints:
-      stopped_velocity_tolerance: 0.05   # rad/s
-      goal_time: 0.6                     # seconds grace after trajectory end
-      rotating_base_joint: { goal: 0.05 }     # rad
-      shoulder_joint: { goal: 0.05 }
-      elbow_joint:    { goal: 0.05 }
-      wrist_joint:    { goal: 0.05 }
-
-    # PID gains — P-only is sufficient for position-controlled servos
-    gains:
-      rotating_base_joint:     { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
-      shoulder_joint: { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
-      elbow_joint:    { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
-      wrist_joint:    { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
-
-    open_loop_control: false
-    allow_integration_in_goal_trajectories: false
-
-
-# ── Gripper controller (gripper_joint only) ─────────────────────────────────
-gripper_controller:
-  ros__parameters:
-    joints:
-      - gripper_joint
+      - rotating_base_joint   # ch 2  — base rotation
+      - shoulder_joint        # ch 0  — shoulder
+      - elbow_joint           # ch 1  — elbow
+      - wrist_joint           # ch 3  — wrist
+      - gripper_joint         # ch 4  — gripper body orientation
 
     command_interfaces:
       - position
@@ -80,10 +49,45 @@ gripper_controller:
 
     constraints:
       stopped_velocity_tolerance: 0.05
-      goal_time: 0.6
-      gripper_joint: { goal: 0.05 }
+      goal_time: 0.8
+      rotating_base_joint: { goal: 0.08 }
+      shoulder_joint:      { goal: 0.05 }
+      elbow_joint:         { goal: 0.05 }
+      wrist_joint:         { goal: 0.05 }
+      gripper_joint:       { goal: 0.05 }
 
     gains:
-      gripper_joint: { p: 30.0, i: 0.0, d: 0.5, i_clamp: 1.0 }
+      rotating_base_joint: { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      shoulder_joint:      { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      elbow_joint:         { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      wrist_joint:         { p: 50.0, i: 0.0, d: 1.0, i_clamp: 1.0 }
+      gripper_joint:       { p: 30.0, i: 0.0, d: 0.5, i_clamp: 1.0 }
+
+    open_loop_control: false
+
+
+# ── Gripper controller (right_gear_joint only) ────────────────────────────────
+# Commands the single finger-actuation servo (ch 5).
+# The five mimic joints follow automatically — do NOT list them here.
+gripper_controller:
+  ros__parameters:
+    joints:
+      - right_gear_joint      # ch 5  — PRIMARY finger open/close actuator
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    allow_partial_joints_goal: true
+
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 0.8
+      right_gear_joint: { goal: 0.05 }
+
+    gains:
+      right_gear_joint: { p: 30.0, i: 0.0, d: 0.5, i_clamp: 1.0 }
 
     open_loop_control: false
